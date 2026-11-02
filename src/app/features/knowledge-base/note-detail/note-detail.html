@@ -1,0 +1,558 @@
+<div class="note-page">
+  <nav class="breadcrumb" aria-label="Navegação estrutural">
+    @if (folder(); as folder) {
+      <a [routerLink]="['/kb/folder', folder.id]">← {{ folder.name }}</a>
+    } @else {
+      <a routerLink="/kb">← Base de conhecimento</a>
+    }
+  </nav>
+
+  @if (loading()) {
+    <!-- ==================== Carregando ==================== -->
+    <section class="note-main">
+      <div class="skeleton-row">
+        <div class="skeleton-lines">
+          <div class="skeleton skeleton--title"></div>
+          <div class="skeleton skeleton--text"></div>
+        </div>
+      </div>
+      <div class="skeleton-row">
+        <div class="skeleton-lines">
+          <div class="skeleton skeleton--text"></div>
+          <div class="skeleton skeleton--text"></div>
+          <div class="skeleton skeleton--text"></div>
+        </div>
+      </div>
+    </section>
+  } @else if (error()) {
+    <!-- ==================== Erro ==================== -->
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M10 1.5a8.5 8.5 0 100 17 8.5 8.5 0 000-17zM2.5 10a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0zm6.4-4.35a.6.6 0 011.2 0V10a.6.6 0 01-.3.52l-2.6 1.5a.6.6 0 01-.6-1.04l2.3-1.33V5.65z" />
+        </svg>
+      </div>
+      <h3>Erro ao carregar nota</h3>
+      <p>{{ error() }}</p>
+      <button class="btn-primary" type="button" (click)="retry()">Tentar novamente</button>
+    </div>
+  } @else if (note(); as note) {
+    <!-- ==================== Nota ==================== -->
+    <header class="note-header">
+      <div class="note-heading" #noteHeading>
+        <h1>{{ note.name }}</h1>
+        <div class="note-meta">
+          <span>
+            por {{ versionAuthorName(viewVersion()!) }} em
+            {{ viewVersion()?.created_at | date: "dd 'de' MMM 'de' y, HH:mm" }}
+          </span>
+          <span class="dot">·</span>
+          <span class="version-chip">Versão: {{ orUninformed(viewVersion()?.name) }}</span>
+        </div>
+        <p class="note-summary">{{ orUninformed(viewVersion()?.description) }}</p>
+      </div>
+      <div class="note-actions">
+        <button
+          type="button"
+          class="icon-action icon-action--lg"
+          (click)="fullscreen.set(true)"
+          aria-label="Ver conteúdo em tela cheia"
+          title="Ver em tela cheia"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M3.5 3a.9.9 0 00-.9.9v3.5a.9.9 0 001.8 0V4.8h2.6a.9.9 0 100-1.8H3.5zm9.5 0a.9.9 0 100 1.8h2.6v2.6a.9.9 0 101.8 0V3.9a.9.9 0 00-.9-.9H13zM3.5 13.1a.9.9 0 00-.9.9v2.6a.9.9 0 00.9.9h3.5a.9.9 0 100-1.8H4.4v-1.7a.9.9 0 00-.9-.9zm13.1 0a.9.9 0 00-.9.9v1.7h-2.6a.9.9 0 100 1.8h3.5a.9.9 0 00.9-.9V14a.9.9 0 00-.9-.9z" />
+          </svg>
+        </button>
+        <button class="btn-primary new-version-btn" type="button" (click)="openCreateVersion()">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z" />
+        </svg>
+        Nova versão
+      </button>
+      @if (auth.hasRole('admin')) {
+        <button class="btn-danger-icon" type="button" (click)="askDeleteNote()" aria-label="Excluir nota" title="Excluir nota">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M8.2 2.35a.9.9 0 00-.9.9v.9H4.15a.9.9 0 000 1.8h11.7a.9.9 0 000-1.8H12.7v-.9a.9.9 0 00-.9-.9H8.2zm-2.7 4.5l.65 9.14c.06.86.78 1.51 1.64 1.51h4.42c.86 0 1.58-.65 1.64-1.51l.65-9.14H5.5zm3.1 2.1a.7.7 0 01.7.7v5.4a.7.7 0 11-1.4 0v-5.4a.7.7 0 01.7-.7zm3.4 0a.7.7 0 01.7.7v5.4a.7.7 0 11-1.4 0v-5.4a.7.7 0 01.7-.7z" />
+          </svg>
+        </button>
+      }
+      </div>
+    </header>
+
+    @if (isViewingOldVersion()) {
+      <div class="version-banner" role="status">
+        <div class="version-banner-text">
+          Você está visualizando a versão
+          <strong>{{ viewVersion()?.name }}</strong> — descrição, conteúdo e referências deste
+          ponto do histórico.
+        </div>
+        <button class="btn-ghost" type="button" (click)="selectCurrentVersion()">
+          Voltar para a versão atual
+        </button>
+      </div>
+    }
+
+    <div class="note-layout">
+      <section class="note-main">
+        @if (hasContent()) {
+          <article #noteBody class="note-body note-md" [innerHTML]="renderedContent()"></article>
+        } @else {
+          <article class="note-body note-body--missing">Não informado</article>
+        }
+
+        <div class="tabs" role="tablist" aria-label="Seções da nota">
+          <button
+            type="button"
+            class="tab"
+            role="tab"
+            [class.tab--active]="activeTab() === 'references'"
+            [attr.aria-selected]="activeTab() === 'references'"
+            (click)="activeTab.set('references')"
+          >
+            Referências
+            <span class="tab-count">{{ referencesCount() }}</span>
+          </button>
+          <button
+            type="button"
+            class="tab"
+            role="tab"
+            [class.tab--active]="activeTab() === 'comments'"
+            [attr.aria-selected]="activeTab() === 'comments'"
+            (click)="activeTab.set('comments')"
+          >
+            Comentários
+          </button>
+        </div>
+
+        <!-- ==================== Aba: Referências ==================== -->
+        @if (activeTab() === 'references') {
+          <section #referencesPanel class="tab-panel" role="tabpanel">
+            <div class="tab-panel-head">
+              <p>
+                @if (isViewingOldVersion()) {
+                  Referências da versão <strong>{{ viewVersion()?.name }}</strong> — somente
+                  leitura em versões históricas.
+                } @else {
+                  Links que contextualizam o conteúdo da versão atual.
+                }
+              </p>
+              @if (!isViewingOldVersion()) {
+                <button class="btn-ghost" type="button" (click)="openAddReference()">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z" />
+                  </svg>
+                  Adicionar referência
+                </button>
+              }
+            </div>
+
+            @if (references().length > 0) {
+              <div class="reference-list">
+                @for (ref of references(); track ref.id) {
+                  <div class="reference" [attr.data-ref-id]="ref.id">
+                    <div class="reference-icon">
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M11 3.5a.9.9 0 000 1.8h2.79l-6.4 6.4a.9.9 0 001.27 1.27l6.4-6.4V9.3a.9.9 0 011.8 0v-4.9a.9.9 0 00-.9-.9H11z" />
+                        <path d="M5 4.3A1.7 1.7 0 003.3 6v8A1.7 1.7 0 005 15.7h8A1.7 1.7 0 0014.7 14v-3.3a.9.9 0 10-1.8 0V13.9H5.1V6.1h3.2a.9.9 0 100-1.8H5z" />
+                      </svg>
+                    </div>
+                    <div class="reference-text">
+                      <h3>{{ orUninformed(ref.name) }}</h3>
+                      @if (ref.description) {
+                        <p>{{ ref.description }}</p>
+                      }
+                      @if (isLink(ref.content)) {
+                        <a class="reference-url" [href]="ref.content" target="_blank" rel="noopener noreferrer">
+                          {{ ref.content }}
+                        </a>
+                      } @else {
+                        <span class="reference-url reference-url--missing">
+                          {{ orUninformed(ref.content) }}
+                        </span>
+                      }
+                    </div>
+                    @if (!isViewingOldVersion()) {
+                      <div class="reference-actions">
+                        <button
+                          type="button"
+                          class="icon-action"
+                          (click)="openEditReference(ref)"
+                          aria-label="Editar referência"
+                          title="Editar referência"
+                        >
+                          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path d="M13.94 2.6a2 2 0 012.83 0l.63.63a2 2 0 010 2.83l-8.9 8.9-4.24 1.41a.7.7 0 01-.88-.88l1.41-4.24 8.9-8.9.25-.75zM4.8 13.06l-.68 2.03 2.03-.68 8.32-8.32-1.35-1.35-8.32 8.32z" />
+                          </svg>
+                        </button>
+                        @if (auth.hasRole('admin')) {
+                          <button
+                            type="button"
+                            class="icon-action icon-action--danger"
+                            (click)="askDeleteReference(ref)"
+                            aria-label="Excluir referência"
+                            title="Excluir referência"
+                          >
+                            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path d="M8.2 2.35a.9.9 0 00-.9.9v.9H4.15a.9.9 0 000 1.8h11.7a.9.9 0 000-1.8H12.7v-.9a.9.9 0 00-.9-.9H8.2zm-2.7 4.5l.65 9.14c.06.86.78 1.51 1.64 1.51h4.42c.86 0 1.58-.65 1.64-1.51l.65-9.14H5.5z" />
+                            </svg>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="missing-info">Não informado</div>
+            }
+          </section>
+        }
+
+        <!-- ==================== Aba: Comentários ==================== -->
+        @if (activeTab() === 'comments') {
+          <section class="tab-panel" role="tabpanel">
+            <div class="missing-info">Não informado</div>
+          </section>
+        }
+      </section>
+
+      <!-- Histórico de versões -->
+      <aside class="versions-panel" aria-label="Histórico de versões">
+        <header class="versions-head">
+          <h2>Versões</h2>
+          <span class="versions-count">{{ versions().length }}</span>
+        </header>
+        <p class="versions-hint">
+          Clique em uma versão para exibir sua descrição, conteúdo e referências.
+        </p>
+        @if (versions().length > 0) {
+          <div class="versions-list">
+            @for (version of versions(); track version.id) {
+              <div
+                class="version-item"
+                [class.version-item--selected]="version.id === viewVersion()?.id"
+                (click)="selectVersion(version.id)"
+              >
+                <div class="version-top">
+                  <span class="version-name">{{ version.name }}</span>
+                  <div class="version-top-actions">
+                    @if ($first) {
+                      <span class="version-current-badge">Atual</span>
+                    }
+                    <button
+                      type="button"
+                      class="icon-action"
+                      (click)="$event.stopPropagation(); openRename(version)"
+                      aria-label="Renomear versão {{ version.name }}"
+                      title="Renomear versão"
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M13.94 2.6a2 2 0 012.83 0l.63.63a2 2 0 010 2.83l-8.9 8.9-4.24 1.41a.7.7 0 01-.88-.88l1.41-4.24 8.9-8.9.25-.75zM4.8 13.06l-.68 2.03 2.03-.68 8.32-8.32-1.35-1.35-8.32 8.32z" />
+                      </svg>
+                    </button>
+                    @if (auth.hasRole('admin')) {
+                      <button
+                        type="button"
+                        class="icon-action icon-action--danger"
+                        (click)="$event.stopPropagation(); askDeleteVersion(version)"
+                        aria-label="Excluir versão {{ version.name }}"
+                        title="Excluir versão"
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path d="M8.2 2.35a.9.9 0 00-.9.9v.9H4.15a.9.9 0 000 1.8h11.7a.9.9 0 000-1.8H12.7v-.9a.9.9 0 00-.9-.9H8.2zm-2.7 4.5l.65 9.14c.06.86.78 1.51 1.64 1.51h4.42c.86 0 1.58-.65 1.64-1.51l.65-9.14H5.5z" />
+                        </svg>
+                      </button>
+                    }
+                  </div>
+                </div>
+                <span class="version-date">
+                  {{ version.created_at | date: "dd/MM/y 'às' HH:mm" }}
+                </span>
+                <span class="version-author">por {{ versionAuthorName(version) }}</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="missing-info">Não informado</div>
+        }
+      </aside>
+    </div>
+  } @else {
+    <!-- ==================== Nota não encontrada ==================== -->
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M4 3.5A1.5 1.5 0 012.5 5v10.5A1.5 1.5 0 004 17h13.5a.5.5 0 00.5-.5v-12a.5.5 0 00-.5-.5H4zm0 12V5h12.5v10.5H4z" />
+          <path d="M6 7h8v1.2H6zM6 9.8h8V11H6zM6 12.6h5v1.2H6z" />
+        </svg>
+      </div>
+      <h3>Nota não encontrada</h3>
+      <p>A nota que você procura não existe ou foi removida.</p>
+      <a routerLink="/kb" class="btn-primary">Voltar para a base</a>
+    </div>
+  }
+</div>
+
+<app-modal
+  [open]="showCreateVersion()"
+  title="Nova versão"
+  subtitle="A versão criada passa a ser a atual da nota. O formulário parte do conteúdo da versão atual."
+  size="lg"
+  (closed)="showCreateVersion.set(false)"
+>
+  <form [formGroup]="versionForm" (ngSubmit)="createVersion()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="version-name">Nome da versão</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="version-name"
+          type="text"
+          formControlName="name"
+          placeholder="Ex.: v2"
+          [class.is-invalid]="versionForm.controls.name.invalid && versionForm.controls.name.touched"
+        />
+      </div>
+      @if (versionForm.controls.name.invalid && versionForm.controls.name.touched) {
+        <span class="field-error">Informe o nome da versão.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="version-description">Descrição (exibida no topo da nota)</label>
+      <div class="input-wrap input-wrap--plain">
+        <textarea
+          id="version-description"
+          rows="2"
+          formControlName="description"
+          placeholder="Uma frase curta que resuma esta versão."
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <div class="editor-label-row">
+        <label for="version-content">Conteúdo da versão</label>
+        <div class="editor-toggle" role="tablist" aria-label="Modos do editor">
+          <button
+            type="button"
+            role="tab"
+            [class.editor-toggle-btn--active]="!versionPreview()"
+            [attr.aria-selected]="!versionPreview()"
+            (click)="versionPreview.set(false)"
+          >
+            Escrever
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [class.editor-toggle-btn--active]="versionPreview()"
+            [attr.aria-selected]="versionPreview()"
+            (click)="versionPreview.set(true)"
+          >
+            Pré-visualizar
+          </button>
+        </div>
+      </div>
+      @if (!versionPreview()) {
+        <div class="input-wrap">
+          <textarea
+            id="version-content"
+            rows="12"
+            formControlName="content"
+            [class.is-invalid]="versionForm.controls.content.invalid && versionForm.controls.content.touched"
+          ></textarea>
+        </div>
+        <p class="md-hint">
+          Suporta Markdown: <code>**negrito**</code>, <code>*itálico*</code>,
+          <code>## títulos</code>, <code>- listas</code>, <code>`código`</code>,
+          <code>> citações</code> e <code>[links](url)</code>.
+        </p>
+      } @else {
+        <div class="note-md editor-preview" [innerHTML]="versionPreviewHtml()"></div>
+      }
+      @if (versionForm.controls.content.invalid && versionForm.controls.content.touched) {
+        <span class="field-error">Escreva o conteúdo da versão (mínimo 10 caracteres).</span>
+      }
+    </div>
+
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="showCreateVersion.set(false)">
+        Cancelar
+      </button>
+      <button class="btn-primary" type="submit" [disabled]="creatingVersion()">
+        {{ creatingVersion() ? 'Salvando…' : 'Salvar nova versão' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal
+  [open]="renaming() !== null"
+  title="Renomear versão"
+  [subtitle]="'Versão atual: ' + (renaming()?.name ?? '')"
+  size="sm"
+  (closed)="renaming.set(null)"
+>
+  <div class="create-form">
+    <div class="form-field">
+      <label for="rename-version-name">Novo nome da versão</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="rename-version-name"
+          type="text"
+          [value]="renameName()"
+          (input)="renameName.set($any($event.target).value)"
+          placeholder="Ex.: v2-revisada"
+        />
+      </div>
+      @if (renameError()) {
+        <span class="field-error">{{ renameError() }}</span>
+      }
+    </div>
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="renaming.set(null)" [disabled]="renameSaving()">
+        Cancelar
+      </button>
+      <button class="btn-primary" type="button" (click)="renameVersion()" [disabled]="renameSaving()">
+        {{ renameSaving() ? 'Salvando…' : 'Salvar' }}
+      </button>
+    </footer>
+  </div>
+</app-modal>
+
+<app-modal
+  [open]="showRefForm()"
+  [title]="editingRefId() ? 'Editar referência' : 'Adicionar referência'"
+  subtitle="As referências são vinculadas à versão atual da nota."
+  (closed)="showRefForm.set(false)"
+>
+  <form [formGroup]="refForm" (ngSubmit)="saveReference()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="ref-name">Nome</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="ref-name"
+          type="text"
+          formControlName="name"
+          placeholder="Ex.: Documentação oficial"
+          [class.is-invalid]="refForm.controls.name.invalid && refForm.controls.name.touched"
+        />
+      </div>
+      @if (refForm.controls.name.invalid && refForm.controls.name.touched) {
+        <span class="field-error">Informe um nome com pelo menos 3 caracteres.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="ref-link">Link</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="ref-link"
+          type="url"
+          formControlName="content"
+          placeholder="https://…"
+          [class.is-invalid]="refForm.controls.content.invalid && refForm.controls.content.touched"
+        />
+      </div>
+      @if (refForm.controls.content.invalid && refForm.controls.content.touched) {
+        <span class="field-error">Informe uma URL válida (http ou https).</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="ref-description">Descrição (opcional)</label>
+      <div class="input-wrap input-wrap--plain">
+        <textarea
+          id="ref-description"
+          rows="2"
+          formControlName="description"
+          placeholder="Para que serve esse link?"
+        ></textarea>
+      </div>
+    </div>
+
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="showRefForm.set(false)">Cancelar</button>
+      <button class="btn-primary" type="submit" [disabled]="savingRef()">
+        {{ savingRef() ? 'Salvando…' : 'Salvar' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal
+  [open]="confirmTarget() !== null"
+  title="Confirmar exclusão"
+  size="sm"
+>
+  @if (confirmTarget(); as target) {
+    <div class="confirm-body">
+      @switch (target.kind) {
+        @case ('reference') {
+          <p>Excluir a referência <strong>{{ target.label }}</strong>?</p>
+        }
+        @case ('version') {
+          <p>
+            Excluir a versão <strong>{{ target.label }}</strong> e todas as referências
+            vinculadas a ela?
+          </p>
+        }
+        @case ('note') {
+          <p>
+            Excluir a nota <strong>{{ target.label }}</strong>? Todas as versões e
+            referências serão removidas.
+          </p>
+        }
+      }
+      <p class="confirm-warning">Esta ação não pode ser desfeita.</p>
+      <footer class="create-actions">
+        <button
+          class="btn-ghost"
+          type="button"
+          (click)="confirmTarget.set(null)"
+          [disabled]="deleting()"
+        >
+          Cancelar
+        </button>
+        <button class="btn-danger" type="button" (click)="executeConfirm()" [disabled]="deleting()">
+          {{ deleting() ? 'Excluindo…' : 'Excluir' }}
+        </button>
+      </footer>
+    </div>
+  }
+</app-modal>
+
+@if (fullscreen()) {
+  <div class="fullscreen-reader" role="dialog" aria-modal="true" aria-label="Nota em tela cheia">
+    <header class="fullscreen-bar">
+      <div class="fullscreen-heading">
+        <h2>{{ note()?.name }}</h2>
+        @if (viewVersion(); as version) {
+          <span>
+            Versão {{ version.name }} · por {{ versionAuthorName(version) }} em
+            {{ version.created_at | date: "dd 'de' MMM 'de' y, HH:mm" }}
+          </span>
+        }
+      </div>
+      <button
+        class="btn-ghost fullscreen-close"
+        type="button"
+        (click)="fullscreen.set(false)"
+        aria-label="Sair da tela cheia"
+      >
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M5.3 4.24a.9.9 0 00-1.27 1.27L8.74 10.2 4.02 14.9a.9.9 0 101.28 1.27l4.7-4.72 4.72 4.72a.9.9 0 101.27-1.27l-4.71-4.7 4.71-4.72a.9.9 0 10-1.27-1.27L10 8.92 5.3 4.24z" />
+        </svg>
+        Sair da tela cheia
+      </button>
+    </header>
+
+    <div class="fullscreen-content">
+      @if (hasContent()) {
+        <article class="note-md fullscreen-article" [innerHTML]="renderedContent()"></article>
+      } @else {
+        <p class="fullscreen-empty">Não informado</p>
+      }
+    </div>
+  </div>
+}

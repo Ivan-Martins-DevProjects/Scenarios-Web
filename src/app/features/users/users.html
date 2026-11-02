@@ -1,0 +1,354 @@
+<div class="users-page">
+  <header class="users-header">
+    <div>
+      <h1>Usuários</h1>
+      <p>
+        {{ totalUsers() }} usuário{{ totalUsers() === 1 ? '' : 's' }} cadastrado{{ totalUsers() === 1 ? '' : 's' }}.
+        A role define as ações permitidas; os setores definem o acesso às pastas.
+      </p>
+    </div>
+    <button class="btn-primary" type="button" (click)="openCreate()">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z" />
+      </svg>
+      Novo usuário
+    </button>
+  </header>
+
+  @if (userSvc.loading()) {
+    <section class="notes-list" aria-label="Carregando usuários">
+      @for (row of [1, 2, 3, 4, 5]; track row) {
+        <div class="skeleton-row">
+          <div class="skeleton-icon"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton skeleton--title"></div>
+            <div class="skeleton skeleton--text"></div>
+          </div>
+        </div>
+      }
+    </section>
+  } @else if (userSvc.error()) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M10 1.5a8.5 8.5 0 100 17 8.5 8.5 0 000-17zM2.5 10a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0zm6.4-4.35a.6.6 0 011.2 0V10a.6.6 0 01-.3.52l-2.6 1.5a.6.6 0 01-.6-1.04l2.3-1.33V5.65z" />
+        </svg>
+      </div>
+      <h3>Erro ao carregar usuários</h3>
+      <p>{{ userSvc.error() }}</p>
+      <button class="btn-primary" type="button" (click)="userSvc.loadUsers()">
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (userSvc.users().length > 0) {
+    <section class="notes-list" aria-label="Usuários cadastrados">
+      @for (user of userSvc.users(); track user.id) {
+        <div class="note-row">
+          <div class="user-avatar" aria-hidden="true">
+            {{ user.name.charAt(0).toUpperCase() }}
+          </div>
+          <div class="row-main">
+            <div class="row-title-line">
+              <h2 class="row-title">{{ user.name }}</h2>
+              <span class="role-chip">{{ user.role_name }}</span>
+            </div>
+            <p class="user-email">{{ user.email }}</p>
+            <div class="row-meta">
+              @if (user.section_names.length > 0) {
+                <span class="section-names">{{ user.section_names.join(' · ') }}</span>
+              } @else {
+                <span class="section-names section-names--empty">Sem setores</span>
+              }
+              <span class="dot">·</span>
+              <span>cadastro em {{ user.created_at | date: 'dd/MM/y' }}</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <button
+              type="button"
+              class="icon-action"
+              (click)="openEdit(user)"
+              aria-label="Editar usuário {{ user.name }}"
+              title="Editar usuário"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M13.94 2.6a2 2 0 012.83 0l.63.63a2 2 0 010 2.83l-8.9 8.9-4.24 1.41a.7.7 0 01-.88-.88l1.41-4.24 8.9-8.9.25-.75zM4.8 13.06l-.68 2.03 2.03-.68 8.32-8.32-1.35-1.35-8.32 8.32z" />
+              </svg>
+            </button>
+            @if (user.id !== auth.user()?.id) {
+              <button
+                type="button"
+                class="icon-action icon-action--danger"
+                (click)="askDelete(user)"
+                aria-label="Excluir usuário {{ user.name }}"
+                title="Excluir usuário"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M8.2 2.35a.9.9 0 00-.9.9v.9H4.15a.9.9 0 000 1.8h11.7a.9.9 0 000-1.8H12.7v-.9a.9.9 0 00-.9-.9H8.2zm-2.7 4.5l.65 9.14c.06.86.78 1.51 1.64 1.51h4.42c.86 0 1.58-.65 1.64-1.51l.65-9.14H5.5z" />
+                </svg>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </section>
+  } @else {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M10 2.5c-4.4 0-8 3.13-8 7 0 1.5.57 2.89 1.53 4.03l-.9 3.35a.65.65 0 00.87.75l3.28-1.32A9.3 9.3 0 0010 16.5c4.4 0 8-3.13 8-7s-3.6-7-8-7zm0 12.2c-1.15 0-2.25-.22-3.24-.65l-.4-.16-2.3.92.63-2.34-.25-.32A5.32 5.32 0 012.3 9.5c0-2.95 3.45-5.4 7.7-5.4s7.7 2.45 7.7 5.4-3.45 5.4-7.7 5.4z" />
+        </svg>
+      </div>
+      <h3>Nenhum usuário cadastrado</h3>
+      <p>Crie o primeiro usuário para a equipe de suporte.</p>
+      <button class="btn-primary" type="button" (click)="openCreate()">Criar usuário</button>
+    </div>
+  }
+
+  <app-pager
+    [totalPages]="totalPages()"
+    [current]="userSvc.currentPage()"
+    [loading]="userSvc.loading()"
+    (pageChange)="goToPage($event)"
+  />
+</div>
+
+<app-modal
+  [open]="showCreate()"
+  title="Novo usuário"
+  subtitle="Defina a role (ações permitidas) e os setores (acesso às pastas)."
+  size="lg"
+  (closed)="showCreate.set(false)"
+>
+  <form [formGroup]="createForm" (ngSubmit)="create()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="new-user-name">Nome</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="new-user-name"
+          type="text"
+          formControlName="name"
+          placeholder="Ex.: Maria Silva"
+          [class.is-invalid]="createForm.controls.name.invalid && createForm.controls.name.touched"
+        />
+      </div>
+      @if (createForm.controls.name.invalid && createForm.controls.name.touched) {
+        <span class="field-error">Informe um nome com pelo menos 3 caracteres.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="new-user-email">E-mail</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="new-user-email"
+          type="email"
+          formControlName="email"
+          placeholder="maria@empresa.com"
+          [class.is-invalid]="createForm.controls.email.invalid && createForm.controls.email.touched"
+        />
+      </div>
+      @if (createForm.controls.email.invalid && createForm.controls.email.touched) {
+        <span class="field-error">
+          @if (createForm.controls.email.hasError('conflict')) {
+            Este e-mail já está cadastrado.
+          } @else {
+            Informe um e-mail válido.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="new-user-password">Senha</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="new-user-password"
+          type="password"
+          formControlName="password"
+          placeholder="Mínimo de 6 caracteres"
+          autocomplete="new-password"
+          [class.is-invalid]="createForm.controls.password.invalid && createForm.controls.password.touched"
+        />
+      </div>
+      @if (createForm.controls.password.invalid && createForm.controls.password.touched) {
+        <span class="field-error">Informe uma senha com pelo menos 6 caracteres.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="new-user-role">Role (ações)</label>
+      <div class="input-wrap input-wrap--plain">
+        <select id="new-user-role" formControlName="role_id">
+          <option value="" disabled>Selecione uma role…</option>
+          @for (role of kb.roles(); track role.id) {
+            <option [value]="role.id">{{ role.name }} — {{ role.description }}</option>
+          }
+        </select>
+      </div>
+      @if (createForm.controls.role_id.invalid && createForm.controls.role_id.touched) {
+        <span class="field-error">Selecione uma role.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label>Setores (acesso às pastas)</label>
+      <div class="sections-grid">
+        @for (section of kb.sections(); track section.id) {
+          <label class="section-option" [class.section-option--active]="createSections().includes(section.id)">
+            <input
+              type="checkbox"
+              [checked]="createSections().includes(section.id)"
+              (change)="toggleCreateSection(section.id)"
+            />
+            <span class="section-option-body">
+              <span class="section-option-name">{{ section.name }}</span>
+              <span class="section-option-desc">{{ section.description }}</span>
+            </span>
+          </label>
+        }
+      </div>
+    </div>
+
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="showCreate.set(false)" [disabled]="creating()">
+        Cancelar
+      </button>
+      <button class="btn-primary" type="submit" [disabled]="creating()">
+        {{ creating() ? 'Criando…' : 'Criar usuário' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal
+  [open]="editing() !== null"
+  title="Editar usuário"
+  subtitle="A role define as ações permitidas; os setores definem as pastas visíveis."
+  size="lg"
+  (closed)="closeEdit()"
+>
+  @if (editing(); as user) {
+    <div class="create-form">
+      <div class="edit-user-head">
+        <div class="user-avatar user-avatar--lg" aria-hidden="true">
+          {{ user.name.charAt(0).toUpperCase() }}
+        </div>
+        <div>
+          <h3 class="edit-user-name">{{ user.name }}</h3>
+          <p class="edit-user-email">{{ user.email }}</p>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="edit-user-name">Nome</label>
+        <div class="input-wrap input-wrap--plain">
+          <input
+            id="edit-user-name"
+            type="text"
+            [value]="editName()"
+            (input)="editName.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="edit-user-email">E-mail (usado para login)</label>
+        <div class="input-wrap input-wrap--plain">
+          <input
+            id="edit-user-email"
+            type="email"
+            [value]="editEmail()"
+            (input)="editEmail.set($any($event.target).value)"
+          />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="edit-user-password">Nova senha (opcional)</label>
+        <div class="input-wrap input-wrap--plain">
+          <input
+            id="edit-user-password"
+            type="password"
+            [value]="editPassword()"
+            (input)="editPassword.set($any($event.target).value)"
+            placeholder="Deixe vazio para manter a senha atual"
+            autocomplete="new-password"
+          />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="edit-user-role">Role (ações)</label>
+        <div class="input-wrap input-wrap--plain">
+          <select
+            id="edit-user-role"
+            (change)="editRoleId.set($any($event.target).value)"
+          >
+            @for (role of kb.roles(); track role.id) {
+              <option [value]="role.id" [selected]="role.id === editRoleId()">
+                {{ role.name }} — {{ role.description }}
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>Setores (acesso às pastas)</label>
+        <div class="sections-grid">
+          @for (section of kb.sections(); track section.id) {
+            <label class="section-option" [class.section-option--active]="editSections().includes(section.id)">
+              <input
+                type="checkbox"
+                [checked]="editSections().includes(section.id)"
+                (change)="toggleEditSection(section.id)"
+              />
+              <span class="section-option-body">
+                <span class="section-option-name">{{ section.name }}</span>
+                <span class="section-option-desc">{{ section.description }}</span>
+              </span>
+            </label>
+          }
+        </div>
+      </div>
+
+      @if (editError()) {
+        <span class="field-error">{{ editError() }}</span>
+      }
+
+      <footer class="create-actions">
+        <button class="btn-ghost" type="button" (click)="closeEdit()" [disabled]="saving()">
+          Cancelar
+        </button>
+        <button class="btn-primary" type="button" (click)="saveUser()" [disabled]="saving()">
+          {{ saving() ? 'Salvando…' : 'Salvar alterações' }}
+        </button>
+      </footer>
+    </div>
+  }
+</app-modal>
+
+<app-modal [open]="confirmTarget() !== null" title="Confirmar exclusão" size="sm">
+  @if (confirmTarget(); as user) {
+    <div class="confirm-body">
+      <p>
+        Excluir o usuário <strong>{{ user.name }}</strong> ({{ user.email }})?
+      </p>
+      <p class="confirm-warning">Esta ação não pode ser desfeita.</p>
+      <footer class="create-actions">
+        <button
+          class="btn-ghost"
+          type="button"
+          (click)="confirmTarget.set(null)"
+          [disabled]="deleting()"
+        >
+          Cancelar
+        </button>
+        <button class="btn-danger" type="button" (click)="deleteUser()" [disabled]="deleting()">
+          {{ deleting() ? 'Excluindo…' : 'Excluir' }}
+        </button>
+      </footer>
+    </div>
+  }
+</app-modal>

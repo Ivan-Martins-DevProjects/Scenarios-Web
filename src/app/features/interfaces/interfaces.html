@@ -1,0 +1,614 @@
+<div class="interfaces-page">
+  <!-- ==================== Sidebar: consultas por pasta ==================== -->
+  <aside class="calls-sidebar">
+    <header class="sidebar-head">
+      <div>
+        <h1>Consulta de interfaces</h1>
+        <p>
+          {{ interfacesSvc.calls().length }}
+          consulta{{ interfacesSvc.calls().length === 1 ? '' : 's' }} salva{{
+            interfacesSvc.calls().length === 1 ? '' : 's'
+          }}
+          para testar APIs e integrações.
+        </p>
+      </div>
+
+      @if (auth.hasRole('admin')) {
+        <div class="new-menu-anchor" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            class="new-trigger"
+            (click)="menuOpen.set(!menuOpen())"
+            aria-haspopup="menu"
+            [attr.aria-expanded]="menuOpen()"
+            aria-label="Criar nova requisição ou pasta"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z"
+              />
+            </svg>
+          </button>
+
+          @if (menuOpen()) {
+            <div class="new-menu" role="menu" aria-label="Criar">
+              <button
+                type="button"
+                class="new-menu-item"
+                role="menuitem"
+                (click)="openCreateCall()"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fill-rule="evenodd"
+                    d="M3.6 3.2h12.8a1.6 1.6 0 011.6 1.6v10.4a1.6 1.6 0 01-1.6 1.6H3.6A1.6 1.6 0 012 15.2V4.8a1.6 1.6 0 011.6-1.6zM4 4.6a.6.6 0 00-.6.6v9.2c0 .33.27.6.6.6h12a.6.6 0 00.6-.6V5.2a.6.6 0 00-.6-.6H4z"
+                    clip-rule="evenodd"
+                  />
+                  <path d="M5.7 6.9h1l1.5 1.5-1.5 1.5h-1l1.5-1.5z" />
+                  <path d="M9.5 11.2h4.6a.65.65 0 110 1.3H9.5a.65.65 0 110-1.3z" />
+                </svg>
+                Nova requisição
+              </button>
+              <button
+                type="button"
+                class="new-menu-item"
+                role="menuitem"
+                (click)="openCreateFolder()"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M2.6 4.6c0-.77.62-1.4 1.4-1.4h3.47c.4 0 .78.17 1.05.46l1.32 1.44h5.16c.77 0 1.4.63 1.4 1.4v7.9c0 .77-.63 1.4-1.4 1.4H4c-.78 0-1.4-.63-1.4-1.4V4.6zm1.8 9.4h11.2V6.66H9.03a1.4 1.4 0 01-1.03-.46L6.87 5H4.4v9z"
+                  />
+                </svg>
+                Nova pasta
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </header>
+
+    <nav class="call-groups" aria-label="Consultas salvas">
+      <ng-template #folderTree let-nodes>
+        @for (node of nodes; track node.folder.id) {
+          <section class="call-folder">
+            <button
+              type="button"
+              class="folder-toggle"
+              (click)="toggleFolder(node.folder.id)"
+              [attr.aria-expanded]="!isCollapsed(node.folder.id)"
+            >
+              <svg
+                class="folder-chevron"
+                [class.folder-chevron--open]="!isCollapsed(node.folder.id)"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M7.3 4.3a.9.9 0 000 1.27l4.4 4.4-4.4 4.4a.9.9 0 101.27 1.27l5.03-5.03a.9.9 0 000-1.27L8.57 4.3a.9.9 0 00-1.27 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <svg class="folder-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  d="M2.6 4.6c0-.77.62-1.4 1.4-1.4h3.47c.4 0 .78.17 1.05.46l1.32 1.44h5.16c.77 0 1.4.63 1.4 1.4v7.9c0 .77-.63 1.4-1.4 1.4H4c-.78 0-1.4-.63-1.4-1.4V4.6zm1.8 9.4h11.2V6.66H9.03a1.4 1.4 0 01-1.03-.46L6.87 5H4.4v9z"
+                />
+              </svg>
+              <span class="folder-name">{{ node.folder.name }}</span>
+              <span class="folder-count">{{ countCalls(node) }}</span>
+            </button>
+
+            @if (!isCollapsed(node.folder.id)) {
+              <div class="folder-calls">
+                @for (call of node.calls; track call.id) {
+                  <button
+                    type="button"
+                    class="call-row"
+                    [class.call-row--active]="selectedCall()?.id === call.id"
+                    (click)="select(call)"
+                  >
+                    <span [class]="'method method--' + call.method.toLowerCase()">
+                      {{ call.method }}
+                    </span>
+                    <span class="call-name">{{ call.name }}</span>
+                  </button>
+                }
+                <ng-container
+                  *ngTemplateOutlet="folderTree; context: { $implicit: node.children }"
+                />
+              </div>
+            }
+          </section>
+        }
+      </ng-template>
+
+      <ng-container
+        *ngTemplateOutlet="folderTree; context: { $implicit: interfacesSvc.folderTree() }"
+      />
+
+      @if (interfacesSvc.unfiledCalls().length > 0) {
+        <section class="call-folder">
+          <button
+            type="button"
+            class="folder-toggle"
+            (click)="toggleFolder(unfiledKey)"
+            [attr.aria-expanded]="!isCollapsed(unfiledKey)"
+          >
+            <svg
+              class="folder-chevron"
+              [class.folder-chevron--open]="!isCollapsed(unfiledKey)"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M7.3 4.3a.9.9 0 000 1.27l4.4 4.4-4.4 4.4a.9.9 0 101.27 1.27l5.03-5.03a.9.9 0 000-1.27L8.57 4.3a.9.9 0 00-1.27 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <svg class="folder-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                d="M2.6 4.6c0-.77.62-1.4 1.4-1.4h3.47c.4 0 .78.17 1.05.46l1.32 1.44h5.16c.77 0 1.4.63 1.4 1.4v7.9c0 .77-.63 1.4-1.4 1.4H4c-.78 0-1.4-.63-1.4-1.4V4.6zm1.8 9.4h11.2V6.66H9.03a1.4 1.4 0 01-1.03-.46L6.87 5H4.4v9z"
+              />
+            </svg>
+            <span class="folder-name">Sem pasta</span>
+            <span class="folder-count">{{ interfacesSvc.unfiledCalls().length }}</span>
+          </button>
+
+          @if (!isCollapsed(unfiledKey)) {
+            <div class="folder-calls">
+              @for (call of interfacesSvc.unfiledCalls(); track call.id) {
+                <button
+                  type="button"
+                  class="call-row"
+                  [class.call-row--active]="selectedCall()?.id === call.id"
+                  (click)="select(call)"
+                >
+                  <span [class]="'method method--' + call.method.toLowerCase()">
+                    {{ call.method }}
+                  </span>
+                  <span class="call-name">{{ call.name }}</span>
+                </button>
+              }
+            </div>
+          }
+        </section>
+      }
+    </nav>
+  </aside>
+
+  <!-- ==================== Painel da consulta ==================== -->
+  <section class="console-panel">
+    @if (selectedCall(); as call) {
+      <header class="call-head">
+        <div class="call-title">
+          @if (auth.hasRole('admin')) {
+            <input
+              class="call-name-input"
+              type="text"
+              [value]="draft().name"
+              (input)="setName($any($event.target).value)"
+              placeholder="Nome da requisição"
+              aria-label="Nome da requisição"
+            />
+          } @else {
+            <h2>{{ call.name }}</h2>
+          }
+          @if (call.description) {
+            <p>{{ call.description }}</p>
+          }
+        </div>
+
+        <div class="call-head-actions">
+          <span [class]="'method method--' + draft().method.toLowerCase()">{{
+            draft().method
+          }}</span>
+          @if (auth.hasRole('admin')) {
+            <button
+              class="btn-primary call-save-btn"
+              type="button"
+              (click)="save()"
+              [disabled]="!isDirty()"
+              [attr.title]="isDirty() ? 'Salvar alterações' : 'Nenhuma alteração pendente'"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M3.2 10.6l1.4-1.4 3.2 3.2 7.6-7.6 1.4 1.4-9 9z" />
+              </svg>
+              Salvar
+            </button>
+          }
+        </div>
+      </header>
+
+      <!-- ==================== Editor da requisição ==================== -->
+      <div class="request-panel">
+        <form class="request-form" (submit)="$event.preventDefault(); send()">
+          <div class="request-line">
+            <select
+              class="method-select"
+              [value]="draft().method"
+              (change)="setMethod($any($event.target).value)"
+              aria-label="Método HTTP"
+            >
+              @for (method of methods; track method) {
+                <option [value]="method">{{ method }}</option>
+              }
+            </select>
+            <input
+              class="url-input"
+              type="text"
+              [value]="draft().url"
+              (input)="setUrl($any($event.target).value)"
+              placeholder="https://api.exemplo.com.br/recurso"
+              aria-label="URL da requisição"
+            />
+            <button
+              class="btn-primary send-btn"
+              type="submit"
+              [disabled]="sending() || draft().url.trim() === ''"
+            >
+              @if (sending()) {
+                <span class="send-spinner" aria-hidden="true"></span>
+                Enviando…
+              } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M3.1 3.1c0-.55.6-.9 1.1-.65l13.6 6.15c.5.25.5.95 0 1.2L4.2 16.15c-.5.25-1.1-.1-1.1-.65V3.1z"
+                  />
+                </svg>
+                Enviar
+              }
+            </button>
+          </div>
+
+          <div class="editor-row">
+            <div class="editor-toggle" role="tablist" aria-label="Seções da requisição">
+              <button
+                type="button"
+                role="tab"
+                [class.editor-toggle-btn--active]="activeTab() === 'params'"
+                [attr.aria-selected]="activeTab() === 'params'"
+                (click)="setTab('params')"
+              >
+                Parâmetros
+                <span class="tab-count">{{ draft().params.length }}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                [class.editor-toggle-btn--active]="activeTab() === 'headers'"
+                [attr.aria-selected]="activeTab() === 'headers'"
+                (click)="setTab('headers')"
+              >
+                Headers
+                <span class="tab-count">{{ draft().headers.length }}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                [class.editor-toggle-btn--active]="activeTab() === 'body'"
+                [attr.aria-selected]="activeTab() === 'body'"
+                (click)="setTab('body')"
+              >
+                Body
+              </button>
+              <button
+                type="button"
+                role="tab"
+                [class.editor-toggle-btn--active]="activeTab() === 'curl'"
+                [attr.aria-selected]="activeTab() === 'curl'"
+                (click)="setTab('curl')"
+              >
+                cURL
+              </button>
+            </div>
+
+            @if (auth.hasRole('admin')) {
+              <label class="folder-select-wrap">
+                <span>Pasta</span>
+                <select
+                  class="folder-select"
+                  [value]="selectedCall()?.folderId ?? ''"
+                  (change)="setCallFolder($any($event.target).value)"
+                  aria-label="Pasta da requisição"
+                >
+                  <option value="">Sem pasta</option>
+                  @for (option of interfacesSvc.folderOptions(); track option.folder.id) {
+                    <option [value]="option.folder.id">
+                      {{ folderIndent(option.depth) }}{{ option.folder.name }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
+          </div>
+
+          @if (activeTab() === 'params') {
+            <div class="composer-editor">
+              @if (draft().params.length > 0) {
+                <div class="kv-list">
+                  @for (param of draft().params; track $index) {
+                    <div class="kv-row">
+                      <input
+                        class="kv-input"
+                        type="text"
+                        placeholder="chave"
+                        [value]="param.key"
+                        (input)="updateParam($index, 'key', $any($event.target).value)"
+                        [attr.aria-label]="'Parâmetro ' + ($index + 1) + ' — chave'"
+                      />
+                      <input
+                        class="kv-input"
+                        type="text"
+                        placeholder="valor"
+                        [value]="param.value"
+                        (input)="updateParam($index, 'value', $any($event.target).value)"
+                        [attr.aria-label]="'Parâmetro ' + ($index + 1) + ' — valor'"
+                      />
+                      <button
+                        type="button"
+                        class="kv-remove"
+                        (click)="removeParam($index)"
+                        [attr.aria-label]="'Remover parâmetro ' + ($index + 1)"
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path
+                            d="M5.3 4.24a.9.9 0 00-1.27 1.27L8.74 10.2 4.02 14.9a.9.9 0 101.28 1.27l4.7-4.72 4.72 4.72a.9.9 0 101.27-1.27l-4.71-4.7 4.71-4.72a.9.9 0 10-1.27-1.27L10 8.92 5.3 4.24z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="kv-empty">Nenhum parâmetro — a URL será chamada sem query string.</p>
+              }
+              <button type="button" class="kv-add" (click)="addParam()">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z"
+                  />
+                </svg>
+                Adicionar parâmetro
+              </button>
+            </div>
+          } @else if (activeTab() === 'headers') {
+            <div class="composer-editor">
+              @if (draft().headers.length > 0) {
+                <div class="kv-list">
+                  @for (header of draft().headers; track $index) {
+                    <div class="kv-row">
+                      <input
+                        class="kv-input"
+                        type="text"
+                        placeholder="Header"
+                        [value]="header.key"
+                        (input)="updateHeader($index, 'key', $any($event.target).value)"
+                        [attr.aria-label]="'Header ' + ($index + 1) + ' — nome'"
+                      />
+                      <input
+                        class="kv-input"
+                        type="text"
+                        placeholder="Valor"
+                        [value]="header.value"
+                        (input)="updateHeader($index, 'value', $any($event.target).value)"
+                        [attr.aria-label]="'Header ' + ($index + 1) + ' — valor'"
+                      />
+                      <button
+                        type="button"
+                        class="kv-remove"
+                        (click)="removeHeader($index)"
+                        [attr.aria-label]="'Remover header ' + ($index + 1)"
+                      >
+                        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path
+                            d="M5.3 4.24a.9.9 0 00-1.27 1.27L8.74 10.2 4.02 14.9a.9.9 0 101.28 1.27l4.7-4.72 4.72 4.72a.9.9 0 101.27-1.27l-4.71-4.7 4.71-4.72a.9.9 0 10-1.27-1.27L10 8.92 5.3 4.24z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <p class="kv-empty">
+                  Nenhum header — apenas os padrões do navegador serão enviados.
+                </p>
+              }
+              <button type="button" class="kv-add" (click)="addHeader()">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z"
+                  />
+                </svg>
+                Adicionar header
+              </button>
+            </div>
+          } @else if (activeTab() === 'body') {
+            <div class="composer-editor">
+              <div class="code-editor" [class.code-editor--disabled]="!bodyEnabled()">
+                <pre
+                  #bodyHighlightBox
+                  class="code-editor-highlight"
+                  aria-hidden="true"
+                ><code class="code-highlight" [innerHTML]="bodyHighlight()"></code></pre>
+                <textarea
+                  class="code-editor-input"
+                  rows="8"
+                  [value]="draft().body"
+                  (input)="setBody($any($event.target).value)"
+                  (scroll)="syncBodyScroll($event)"
+                  [disabled]="!bodyEnabled()"
+                  placeholder="Corpo da requisição (JSON, XML, texto…)"
+                  aria-label="Corpo da requisição"
+                  spellcheck="false"
+                ></textarea>
+              </div>
+              <p class="composer-hint">
+                @if (bodyEnabled()) {
+                  Content-Type: application/json é incluído automaticamente quando nenhum é
+                  informado.
+                } @else {
+                  O método {{ draft().method }} não envia corpo.
+                }
+              </p>
+            </div>
+          } @else {
+            <div class="composer-editor">
+              <textarea
+                class="body-input"
+                rows="5"
+                [value]="draft().curl"
+                (input)="setCurl($any($event.target).value)"
+                placeholder='curl -X POST https://api.exemplo.com.br/recurso -H "Content-Type: application/json" -d "{\"chave\":\"valor\"}"'
+                aria-label="Comando cURL para importar"
+              ></textarea>
+              @if (curlError()) {
+                <span class="field-error">{{ curlError() }}</span>
+              }
+              <div class="curl-actions">
+                <button
+                  class="btn-primary"
+                  type="button"
+                  (click)="applyCurl()"
+                  [disabled]="draft().curl.trim() === ''"
+                >
+                  Aplicar cURL
+                </button>
+              </div>
+              <p class="composer-hint">
+                Cole o comando copiado do terminal — ele é normalizado e distribuído em método, URL,
+                parâmetros, headers e body.
+              </p>
+            </div>
+          }
+        </form>
+      </div>
+
+      <!-- ==================== Resposta ==================== -->
+      <section class="response-panel" aria-label="Resposta da requisição">
+        <header class="response-head">
+          <h3>Resposta</h3>
+          @if (sending()) {
+            <span class="response-state">Enviando requisição…</span>
+          } @else {
+            @if (response(); as result) {
+              @switch (result.kind) {
+                @case ('response') {
+                  <span [class]="'status-pill status-pill--' + statusTone(result.status)">
+                    {{ result.status }}
+                  </span>
+                  <span class="response-time">{{ result.durationMs }} ms</span>
+                }
+                @case ('error') {
+                  <span class="status-pill status-pill--error">Falhou</span>
+                }
+              }
+            } @else {
+              <span class="response-state">Aguardando envio</span>
+            }
+          }
+        </header>
+
+        <div class="response-body">
+          @if (sending()) {
+            <div class="response-loading">
+              <span class="send-spinner send-spinner--lg" aria-hidden="true"></span>
+              Enviando requisição…
+            </div>
+          } @else {
+            @if (response(); as result) {
+              @switch (result.kind) {
+                @case ('response') {
+                  @if (result.body) {
+                    <pre
+                      class="response-code"
+                    ><code class="code-highlight" [innerHTML]="responseHighlight()"></code></pre>
+                  } @else {
+                    <p class="response-placeholder">Sem corpo na resposta.</p>
+                  }
+                }
+                @case ('error') {
+                  <p class="response-error">{{ result.message }}</p>
+                }
+              }
+            } @else {
+              <p class="response-placeholder">
+                Faça alterações nos parâmetros, headers ou body e envie — a resposta da requisição
+                aparece aqui.
+              </p>
+            }
+          }
+        </div>
+      </section>
+    } @else {
+      <div class="empty-state interfaces-empty">
+        <div class="empty-icon">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path
+              fill-rule="evenodd"
+              d="M3.6 3.2h12.8a1.6 1.6 0 011.6 1.6v10.4a1.6 1.6 0 01-1.6 1.6H3.6A1.6 1.6 0 012 15.2V4.8a1.6 1.6 0 011.6-1.6zM4 4.6a.6.6 0 00-.6.6v9.2c0 .33.27.6.6.6h12a.6.6 0 00.6-.6V5.2a.6.6 0 00-.6-.6H4z"
+              clip-rule="evenodd"
+            />
+            <path d="M5.7 6.9h1l1.5 1.5-1.5 1.5h-1l1.5-1.5z" />
+            <path d="M9.5 11.2h4.6a.65.65 0 110 1.3H9.5a.65.65 0 110-1.3z" />
+          </svg>
+        </div>
+        <h3>Nenhuma consulta selecionada</h3>
+        <p>Escolha uma consulta na lista à esquerda para montar e disparar a requisição.</p>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- ==================== Modal: nova pasta ==================== -->
+<app-modal
+  [open]="showCreateFolder()"
+  title="Nova pasta"
+  subtitle="Pastas agrupam requisições relacionadas, como no Postman."
+  (closed)="showCreateFolder.set(false)"
+>
+  <form [formGroup]="folderForm" (ngSubmit)="createFolder()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="new-folder-name">Nome da pasta</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="new-folder-name"
+          type="text"
+          formControlName="name"
+          placeholder="Ex.: Integrações"
+          [class.is-invalid]="folderForm.controls.name.invalid && folderForm.controls.name.touched"
+        />
+      </div>
+      @if (folderError()) {
+        <span class="field-error">{{ folderError() }}</span>
+      } @else if (folderForm.controls.name.invalid && folderForm.controls.name.touched) {
+        <span class="field-error">Informe um nome com pelo menos 3 caracteres.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="new-folder-parent">Pasta pai (opcional)</label>
+      <div class="input-wrap input-wrap--plain">
+        <select id="new-folder-parent" formControlName="parentId">
+          <option value="">Nível principal</option>
+          @for (option of interfacesSvc.folderOptions(); track option.folder.id) {
+            <option [value]="option.folder.id">
+              {{ folderIndent(option.depth) }}{{ option.folder.name }}
+            </option>
+          }
+        </select>
+      </div>
+      <p class="composer-hint">Pastas podem ser aninhadas em quantos níveis precisar.</p>
+    </div>
+
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="showCreateFolder.set(false)">
+        Cancelar
+      </button>
+      <button class="btn-primary" type="submit">Criar pasta</button>
+    </footer>
+  </form>
+</app-modal>

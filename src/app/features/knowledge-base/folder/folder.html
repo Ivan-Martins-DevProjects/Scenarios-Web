@@ -1,0 +1,326 @@
+<div class="folder-page">
+  @if (folder(); as folder) {
+    <nav class="breadcrumb" aria-label="Navegação estrutural">
+      <a routerLink="/kb">← Base de conhecimento</a>
+    </nav>
+
+    <header class="folder-header">
+      <div class="folder-heading">
+        <div class="folder-icon">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M2.6 4.6c0-.77.62-1.4 1.4-1.4h3.47c.4 0 .78.17 1.05.46l1.32 1.44h5.16c.77 0 1.4.63 1.4 1.4v7.9c0 .77-.63 1.4-1.4 1.4H4c-.78 0-1.4-.63-1.4-1.4V4.6zm1.8 9.4h11.2V6.66H9.03a1.4 1.4 0 01-1.03-.46L6.87 5H4.4v9z" />
+          </svg>
+        </div>
+        <div>
+          <h1>{{ folder.name }}</h1>
+          <p>{{ totalNotes() }} nota{{ totalNotes() === 1 ? '' : 's' }} nesta pasta</p>
+        </div>
+      </div>
+      <div class="folder-actions">
+        <button class="btn-primary" type="button" (click)="openCreate()">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z" />
+          </svg>
+          Nova nota
+        </button>
+        @if (auth.hasRole('admin', 'editor')) {
+          <button
+            class="btn-danger-icon btn-danger-icon--edit"
+            type="button"
+            (click)="openEdit()"
+            aria-label="Editar pasta"
+            title="Editar nome e descrição"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M13.94 2.6a2 2 0 012.83 0l.63.63a2 2 0 010 2.83l-8.9 8.9-4.24 1.41a.7.7 0 01-.88-.88l1.41-4.24 8.9-8.9.25-.75zM4.8 13.06l-.68 2.03 2.03-.68 8.32-8.32-1.35-1.35-8.32 8.32z" />
+            </svg>
+          </button>
+        }
+        @if (auth.hasRole('admin')) {
+          <button
+            class="btn-danger-icon"
+            type="button"
+            (click)="askDelete()"
+            aria-label="Excluir pasta"
+            title="Excluir pasta"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M8.2 2.35a.9.9 0 00-.9.9v.9H4.15a.9.9 0 000 1.8h11.7a.9.9 0 000-1.8H12.7v-.9a.9.9 0 00-.9-.9H8.2zm-2.7 4.5l.65 9.14c.06.86.78 1.51 1.64 1.51h4.42c.86 0 1.58-.65 1.64-1.51l.65-9.14H5.5zm3.1 2.1a.7.7 0 01.7.7v5.4a.7.7 0 11-1.4 0v-5.4a.7.7 0 01.7-.7zm3.4 0a.7.7 0 01.7.7v5.4a.7.7 0 11-1.4 0v-5.4a.7.7 0 01.7-.7z" />
+            </svg>
+          </button>
+        }
+      </div>
+    </header>
+
+    @if (folder.description) {
+      <p class="folder-description">{{ folder.description }}</p>
+    }
+
+    @if (kb.folderNotesLoading()) {
+      <section class="notes-list" aria-label="Carregando notas">
+        @for (row of [1, 2, 3, 4, 5]; track row) {
+          <div class="skeleton-row">
+            <div class="skeleton-lines">
+              <div class="skeleton skeleton--title"></div>
+              <div class="skeleton skeleton--text"></div>
+            </div>
+          </div>
+        }
+      </section>
+    } @else if (kb.folderNotesError()) {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M10 1.5a8.5 8.5 0 100 17 8.5 8.5 0 000-17zM2.5 10a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0zm6.4-4.35a.6.6 0 011.2 0V10a.6.6 0 01-.3.52l-2.6 1.5a.6.6 0 01-.6-1.04l2.3-1.33V5.65z" />
+          </svg>
+        </div>
+        <h3>Erro ao carregar notas</h3>
+        <p>{{ kb.folderNotesError() }}</p>
+        <button class="btn-primary" type="button" (click)="goToPage(kb.currentNotesPage())">
+          Tentar novamente
+        </button>
+      </div>
+    } @else if (kb.folderNotes().length > 0) {
+      <section class="notes-list" aria-label="Notas da pasta">
+        @for (note of kb.folderNotes(); track note.id) {
+          <a class="note-row" [routerLink]="['/kb/note', note.id]">
+            <div class="row-main">
+              <div class="row-title-line">
+                <h2 class="row-title">{{ note.name }}</h2>
+              </div>
+              @if (note.description) {
+                <p class="row-snippet">{{ note.description }}</p>
+              }
+              <div class="row-meta">
+                <span>criada em {{ note.created_at | date: "dd/MM/y 'às' HH:mm" }}</span>
+              </div>
+            </div>
+            <svg class="row-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fill-rule="evenodd"
+                d="M7.3 4.3a.9.9 0 000 1.27l4.4 4.4-4.4 4.4a.9.9 0 101.27 1.27l5.03-5.03a.9.9 0 000-1.27L8.57 4.3a.9.9 0 00-1.27 0z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </a>
+        }
+      </section>
+    } @else {
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M4 3.5A1.5 1.5 0 012.5 5v10.5A1.5 1.5 0 004 17h13.5a.5.5 0 00.5-.5v-12a.5.5 0 00-.5-.5H4zm0 12V5h12.5v10.5H4z" />
+            <path d="M6 7h8v1.2H6zM6 9.8h8V11H6zM6 12.6h5v1.2H6z" />
+          </svg>
+        </div>
+        <h3>Nenhuma nota nesta pasta</h3>
+        <p>Crie a primeira nota para começar a documentar o conhecimento deste tema.</p>
+        <button class="btn-primary" type="button" (click)="openCreate()">Criar nota</button>
+      </div>
+    }
+
+    @if (!kb.folderNotesError()) {
+      <app-pager
+        [totalPages]="totalPages()"
+        [current]="kb.currentNotesPage()"
+        [loading]="kb.folderNotesLoading()"
+        (pageChange)="goToPage($event)"
+      />
+    }
+  } @else {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M2.6 4.6c0-.77.62-1.4 1.4-1.4h3.47c.4 0 .78.17 1.05.46l1.32 1.44h5.16c.77 0 1.4.63 1.4 1.4v7.9c0 .77-.63 1.4-1.4 1.4H4c-.78 0-1.4-.63-1.4-1.4V4.6zm1.8 9.4h11.2V6.66H9.03a1.4 1.4 0 01-1.03-.46L6.87 5H4.4v9z" />
+        </svg>
+      </div>
+      <h3>Pasta não encontrada</h3>
+      <p>A pasta que você procura não existe.</p>
+      <a routerLink="/kb" class="btn-primary">Voltar para as pastas</a>
+    </div>
+  }
+</div>
+
+<app-modal
+  [open]="showCreate()"
+  title="Nova nota"
+  subtitle="A nota será criada na pasta {{ folder()?.name }} e seu conteúdo será salvo como a primeira versão."
+  size="lg"
+  (closed)="showCreate.set(false)"
+>
+  <form [formGroup]="createForm" (ngSubmit)="create()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="new-note-name">Título</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="new-note-name"
+          type="text"
+          formControlName="name"
+          placeholder="Ex.: Fluxo de atendimento para reativação"
+          [class.is-invalid]="createForm.controls.name.invalid && createForm.controls.name.touched"
+        />
+      </div>
+      @if (createForm.controls.name.invalid && createForm.controls.name.touched) {
+        <span class="field-error">
+          @if (createForm.controls.name.hasError('required')) {
+            Informe um título.
+          } @else {
+            O título deve ter pelo menos 3 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="new-note-description">Resumo (exibido na lista)</label>
+      <div class="input-wrap input-wrap--plain">
+        <textarea
+          id="new-note-description"
+          rows="2"
+          formControlName="description"
+          placeholder="Uma frase curta que resuma o conteúdo da nota."
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <div class="editor-label-row">
+        <label for="new-note-content">Conteúdo da nota</label>
+        <div class="editor-toggle" role="tablist" aria-label="Modos do editor">
+          <button
+            type="button"
+            role="tab"
+            [class.editor-toggle-btn--active]="!contentPreview()"
+            [attr.aria-selected]="!contentPreview()"
+            (click)="contentPreview.set(false)"
+          >
+            Escrever
+          </button>
+          <button
+            type="button"
+            role="tab"
+            [class.editor-toggle-btn--active]="contentPreview()"
+            [attr.aria-selected]="contentPreview()"
+            (click)="contentPreview.set(true)"
+          >
+            Pré-visualizar
+          </button>
+        </div>
+      </div>
+      @if (!contentPreview()) {
+        <div class="input-wrap">
+          <textarea
+            id="new-note-content"
+            rows="9"
+            formControlName="content"
+            placeholder="Documente todo o conhecimento: passos, sintomas, validações e orientações ao cliente."
+            [class.is-invalid]="createForm.controls.content.invalid && createForm.controls.content.touched"
+          ></textarea>
+        </div>
+        <p class="md-hint">
+          Suporta Markdown: <code>**negrito**</code>, <code>*itálico*</code>,
+          <code>## títulos</code>, <code>- listas</code>, <code>`código`</code>,
+          <code>> citações</code> e <code>[links](url)</code>.
+        </p>
+      } @else {
+        <div class="note-md editor-preview" [innerHTML]="previewHtml()"></div>
+      }
+      @if (createForm.controls.content.invalid && createForm.controls.content.touched) {
+        <span class="field-error">
+          @if (createForm.controls.content.hasError('required')) {
+            Escreva o conteúdo da nota.
+          } @else {
+            O conteúdo deve ter pelo menos 10 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="new-note-version">Nome da primeira versão</label>
+      <div class="input-wrap input-wrap--plain">
+        <input id="new-note-version" type="text" formControlName="versionName" placeholder="v1" />
+      </div>
+    </div>
+
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="showCreate.set(false)">Cancelar</button>
+      <button class="btn-primary" type="submit" [disabled]="creating()">
+        {{ creating() ? 'Criando…' : 'Criar nota' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal
+  [open]="showEdit()"
+  title="Editar pasta"
+  subtitle="Altere o nome e a descrição da pasta."
+  (closed)="showEdit.set(false)"
+>
+  <form [formGroup]="editForm" (ngSubmit)="editFolder()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="edit-folder-name">Nome da pasta</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="edit-folder-name"
+          type="text"
+          formControlName="name"
+          [class.is-invalid]="editForm.controls.name.invalid && editForm.controls.name.touched"
+        />
+      </div>
+      @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
+        <span class="field-error">Informe um nome com pelo menos 3 caracteres.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="edit-folder-description">Descrição</label>
+      <div class="input-wrap input-wrap--plain">
+        <textarea
+          id="edit-folder-description"
+          rows="3"
+          formControlName="description"
+          placeholder="Para que serve esta pasta?"
+        ></textarea>
+      </div>
+    </div>
+
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="showEdit.set(false)" [disabled]="savingEdit()">
+        Cancelar
+      </button>
+      <button class="btn-primary" type="submit" [disabled]="savingEdit()">
+        {{ savingEdit() ? 'Salvando…' : 'Salvar alterações' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal
+  [open]="showConfirm()"
+  title="Confirmar exclusão"
+  size="sm"
+  (closed)="showConfirm.set(false)"
+>
+  <div class="confirm-body">
+    <p>
+      Excluir a pasta <strong>{{ folder()?.name }}</strong>? Todas as notas, versões e
+      referências deste conteúdo serão removidas.
+    </p>
+    <p class="confirm-warning">Esta ação não pode ser desfeita.</p>
+    <footer class="create-actions">
+      <button
+        class="btn-ghost"
+        type="button"
+        (click)="showConfirm.set(false)"
+        [disabled]="deleting()"
+      >
+        Cancelar
+      </button>
+      <button class="btn-danger" type="button" (click)="deleteFolder()" [disabled]="deleting()">
+        {{ deleting() ? 'Excluindo…' : 'Excluir' }}
+      </button>
+    </footer>
+  </div>
+</app-modal>

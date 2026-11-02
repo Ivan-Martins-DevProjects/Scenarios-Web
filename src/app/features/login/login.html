@@ -1,0 +1,149 @@
+<div class="login-page">
+  <!-- Painel de marca -->
+  <aside class="brand-panel">
+    <div class="brand-glow brand-glow--one"></div>
+    <div class="brand-glow brand-glow--two"></div>
+
+    <div class="brand-content">
+      <div class="brand-mark">
+        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
+          <rect width="40" height="40" rx="11" fill="url(#logo-grad)" />
+          <circle cx="14" cy="20" r="3.4" fill="#fff" />
+          <circle cx="26" cy="12.5" r="3.4" fill="#fff" fill-opacity="0.85" />
+          <circle cx="26" cy="27.5" r="3.4" fill="#fff" fill-opacity="0.85" />
+          <path d="M16.6 18.4 23.2 13.7M16.6 21.6 23.2 26.3M23.5 15.4v9.2" stroke="#fff" stroke-opacity="0.55" stroke-width="1.8" stroke-linecap="round" />
+          <defs>
+            <linearGradient id="logo-grad" x1="0" y1="0" x2="40" y2="40">
+              <stop stop-color="#6366f1" />
+              <stop offset="1" stop-color="#8b5cf6" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>Scenarios</span>
+      </div>
+
+      <h1 class="brand-title">
+        Centralize o suporte<br />
+        <em>em um só lugar.</em>
+      </h1>
+      <p class="brand-subtitle">
+        Informações, ferramentas e cenários de atendimento da sua equipe — organizados e acessíveis
+        com um único login.
+      </p>
+
+      <ul class="brand-features">
+        <li>
+          <span class="feature-check">✓</span>
+          Base de conhecimento unificada
+        </li>
+        <li>
+          <span class="feature-check">✓</span>
+          Ferramentas de suporte integradas
+        </li>
+        <li>
+          <span class="feature-check">✓</span>
+          Acesso seguro com sessão de 8 horas
+        </li>
+      </ul>
+    </div>
+
+    <footer class="brand-footer">© 2026 Scenarios — Plataforma de suporte</footer>
+  </aside>
+
+  <!-- Painel do formulário -->
+  <main class="form-panel">
+    <div class="login-card">
+      <div class="login-header">
+        <h2>Bem-vindo de volta</h2>
+        <p>Entre com suas credenciais para acessar a plataforma.</p>
+      </div>
+
+      @if (serverError()) {
+        <div class="alert-error" role="alert">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5a1 1 0 112 0 1 1 0 01-2 0zm1-8a.9.9 0 00-.9.9v4.2a.9.9 0 101.8 0V5.9A.9.9 0 0010 5z" clip-rule="evenodd" />
+          </svg>
+          <span>{{ serverError() }}</span>
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <div class="form-field">
+          <label for="email">E-mail</label>
+          <div class="input-wrap">
+            <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M2.5 5.5A2 2 0 014.5 3.5h11a2 2 0 012 2v9a2 2 0 01-2 2h-11a2 2 0 01-2-2v-9zm2-.5a.5.5 0 00-.5.5v.35l6 3.43 6-3.43V5.5a.5.5 0 00-.5-.5h-11zm12.5 3.02l-5.76 3.29a.5.5 0 01-.48 0L4.5 8.02v6.48a.5.5 0 00.5.5h11a.5.5 0 00.5-.5V8.02z" />
+            </svg>
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              placeholder="voce@empresa.com"
+              autocomplete="email"
+              [class.is-invalid]="form.controls.email.invalid && form.controls.email.touched"
+            />
+          </div>
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <span class="field-error">
+              {{ form.controls.email.hasError('required') ? 'Informe seu e-mail.' : 'Informe um e-mail válido.' }}
+            </span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="password">Senha</label>
+          <div class="input-wrap">
+            <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 1.5a4.5 4.5 0 00-4.5 4.5v2H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V6A4.5 4.5 0 0010 1.5zm-3 4.5a3 3 0 016 0v2h-6V6zm3 5.5a1.25 1.25 0 00-.75 2.25v1.25a.75.75 0 001.5 0v-1.25A1.25 1.25 0 0010 12z" clip-rule="evenodd" />
+            </svg>
+            <input
+              id="password"
+              [type]="hidePassword() ? 'password' : 'text'"
+              formControlName="password"
+              placeholder="Sua senha"
+              autocomplete="current-password"
+              [class.is-invalid]="form.controls.password.invalid && form.controls.password.touched"
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              (click)="togglePassword()"
+              [attr.aria-label]="hidePassword() ? 'Mostrar senha' : 'Ocultar senha'"
+              [attr.aria-pressed]="!hidePassword()"
+            >
+              @if (hidePassword()) {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M10 3.5c-2.6 0-4.9 1.28-6.9 3.6a1 1 0 001.5 1.32C6.27 6.5 8.13 5.5 10 5.5s3.73 1 5.4 2.92a1 1 0 001.5-1.32C14.9 4.78 12.6 3.5 10 3.5zm0 4a4 4 0 00-3.9 3.1l1.94 1.94A2 2 0 0012 11.5l1.94 1.94A4 4 0 0010 7.5zm-6.32 1.6a1 1 0 00-1.37.36C1.46 10.76 1 12.28 1 13.5c0 1.05.3 2.06.83 2.95a1 1 0 101.72-1.02A4.6 4.6 0 013 13.5c0-.83.33-1.87 1.04-3.02a1 1 0 00-.36-1.38zm14.64 0a1 1 0 00-.36 1.37c.71 1.15 1.04 2.2 1.04 3.03 0 .69-.16 1.35-.45 1.94a1 1 0 101.77.92c.42-.82.68-1.8.68-2.86 0-1.22-.46-2.74-1.31-4.04a1 1 0 00-1.37-.36z" />
+                  <path d="M3.29 3.29a1 1 0 011.42 0l12 12a1 1 0 11-1.42 1.42l-12-12a1 1 0 010-1.42z" />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M10 5.5c1.87 0 3.73 1 5.4 2.92a1 1 0 001.5-1.32C14.9 4.78 12.6 3.5 10 3.5s-4.9 1.28-6.9 3.6a1 1 0 001.5 1.32C6.27 6.5 8.13 5.5 10 5.5zm0 4a2 2 0 011.94 1.5h3.36a4 4 0 10-4.46-4.78A5.5 5.5 0 0010 7.5a4 4 0 00-3.9 3.1l1.94 1.94A2 2 0 0110 9.5z" />
+                  <path fill-rule="evenodd" d="M.76 1.83a1 1 0 011.4.04l16 16a1 1 0 01-1.4 1.42L9.9 14.42A4 4 0 016 10.5v-.7L.72 3.23a1 1 0 01.04-1.4zM7.6 11.82l1.9 1.9A2 2 0 017.6 11.82z" clip-rule="evenodd" />
+                </svg>
+              }
+            </button>
+          </div>
+          @if (form.controls.password.invalid && form.controls.password.touched) {
+            <span class="field-error">
+              {{ form.controls.password.hasError('required') ? 'Informe sua senha.' : 'A senha deve ter no mínimo 6 caracteres.' }}
+            </span>
+          }
+        </div>
+
+        <button class="submit-btn" type="submit" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Entrando...
+          } @else {
+            Entrar
+          }
+        </button>
+      </form>
+
+      <p class="login-footer">
+        Precisa de ajuda? Contate o administrador da plataforma.
+      </p>
+    </div>
+  </main>
+</div>

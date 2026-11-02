@@ -1,0 +1,127 @@
+<div class="tools-page">
+  <header class="tools-header">
+    <div>
+      <h1>Ferramentas</h1>
+      <p>
+        {{ toolsSvc.tools.length }}
+        ferramenta{{ toolsSvc.tools.length === 1 ? '' : 's' }} disponíve{{
+          toolsSvc.tools.length === 1 ? 'l' : 'is'
+        }}
+        para agilizar o atendimento da equipe — agrupadas por setor.
+      </p>
+    </div>
+  </header>
+
+  @for (group of toolsSvc.groups; track group.sector) {
+    <section class="tool-group" [attr.aria-label]="'Ferramentas do setor ' + group.sector">
+      <header class="group-head">
+        <h2>{{ group.sector }}</h2>
+        <span class="group-count">{{ group.tools.length }}</span>
+      </header>
+
+      <div class="tools-grid">
+        @for (tool of group.tools; track tool.id) {
+          <a
+            class="tool-card"
+            (click)="onClick(tool)"
+          >
+            <div class="card-top">
+              <div class="tool-icon">
+                @switch (tool.icon) {
+                  @case ('clock') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path
+                        d="M10 1.5a8.5 8.5 0 100 17 8.5 8.5 0 000-17zM2.5 10a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0zm6.4-4.35a.6.6 0 011.2 0V10a.6.6 0 01-.3.52l-2.6 1.5a.6.6 0 01-.6-1.04l2.3-1.33V5.65z"
+                      />
+                    </svg>
+                  }
+                  @case ('search') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path
+                        fill-rule="evenodd"
+                        d="M9 3.5a5.5 5.5 0 104.226 9.02l3.627 3.627a.9.9 0 001.27-1.27l-3.626-3.628A5.5 5.5 0 009 3.5zm-3.6 5.5a3.6 3.6 0 117.2 0 3.6 3.6 0 01-7.2 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  }
+                  @case ('checklist') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d="M2.8 4.4h8.4v1.6H2.8z" />
+                      <path d="M2.8 9.2h8.4v1.6H2.8z" />
+                      <path d="M2.8 14h6.4v1.6H2.8z" />
+                      <path d="M12.2 9.6l1.1-1.1 1.8 1.8 3.1-3.1 1.1 1.1-4.2 4.2-2.9-2.9z" />
+                    </svg>
+                  }
+                  @case ('percent') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d="M14.1 3.6l2.3 2.3L5.9 16.4l-2.3-2.3z" />
+                      <path d="M6.1 3.2a2.9 2.9 0 100 5.8 2.9 2.9 0 000-5.8z" />
+                      <path d="M13.9 11a2.9 2.9 0 100 5.8 2.9 2.9 0 000-5.8z" />
+                    </svg>
+                  }
+                  @case ('book') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path
+                        d="M4 3.5A1.5 1.5 0 012.5 5v10.5A1.5 1.5 0 004 17h13.5a.5.5 0 00.5-.5v-12a.5.5 0 00-.5-.5H4zm0 12V5h12.5v10.5H4z"
+                      />
+                      <path d="M6 7h8v1.2H6zM6 9.8h8V11H6zM6 12.6h5v1.2H6z" />
+                    </svg>
+                  }
+                  @case ('chart') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path d="M2.6 11.2h3.4v5.3H2.6z" />
+                      <path d="M8.3 7.4h3.4v9.1H8.3z" />
+                      <path d="M14 3.5h3.4v13H14z" />
+                    </svg>
+                  }
+                  @case ('server') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path
+                        d="M3.4 3h13.2a1.4 1.4 0 011.4 1.4v3.2a1.4 1.4 0 01-1.4 1.4H3.4a1.4 1.4 0 01-1.4-1.4V4.4A1.4 1.4 0 013.4 3z"
+                      />
+                      <path
+                        d="M3.4 11h13.2a1.4 1.4 0 011.4 1.4v3.2a1.4 1.4 0 01-1.4 1.4H3.4a1.4 1.4 0 01-1.4-1.4v-3.2A1.4 1.4 0 013.4 11z"
+                      />
+                      <path d="M5.2 4.4a.95.95 0 100 1.9.95.95 0 000-1.9z" />
+                      <path d="M5.2 12.4a.95.95 0 100 1.9.95.95 0 000-1.9z" />
+                    </svg>
+                  }
+                  @case ('link') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path
+                        d="M11 3.5a.9.9 0 000 1.8h2.79l-6.4 6.4a.9.9 0 001.27 1.27l6.4-6.4V9.3a.9.9 0 011.8 0v-4.9a.9.9 0 00-.9-.9H11z"
+                      />
+                      <path
+                        d="M5 4.3A1.7 1.7 0 003.3 6v8A1.7 1.7 0 005 15.7h8a1.7 1.7 0 001.7-1.7v-3.3a.9.9 0 10-1.8 0v3.2H5.1V6.1h3.2a.9.9 0 100-1.8H5z"
+                      />
+                    </svg>
+                  }
+                  @case ('terminal') {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path
+                        fill-rule="evenodd"
+                        d="M3.6 3.2h12.8a1.6 1.6 0 011.6 1.6v10.4a1.6 1.6 0 01-1.6 1.6H3.6A1.6 1.6 0 012 15.2V4.8a1.6 1.6 0 011.6-1.6zM4 4.6a.6.6 0 00-.6.6v9.2c0 .33.27.6.6.6h12a.6.6 0 00.6-.6V5.2a.6.6 0 00-.6-.6H4z"
+                        clip-rule="evenodd"
+                      />
+                      <path d="M5.7 6.9h1l1.5 1.5-1.5 1.5h-1l1.5-1.5z" />
+                      <path d="M9.5 11.2h4.6a.65.65 0 110 1.3H9.5a.65.65 0 110-1.3z" />
+                    </svg>
+                  }
+                }
+              </div>
+              @if (tool.url) {
+                <svg class="card-arrow" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    d="M14.2 3.4H17a.6.6 0 01.6.6v2.8a.6.6 0 11-1.2 0V5.45l-8.18 8.18a.6.6 0 11-.85-.85L15.55 4.6H14.2a.6.6 0 110-1.2z"
+                  />
+                </svg>
+              }
+            </div>
+            <h3>{{ tool.name }}</h3>
+            <p>{{ tool.description }}</p>
+          </a>
+        }
+      </div>
+    </section>
+  }
+</div>

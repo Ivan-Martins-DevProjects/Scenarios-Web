@@ -1,0 +1,176 @@
+.dashboard {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 44px 24px 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.welcome {
+  animation: rise 0.5s ease both;
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  p {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+  }
+}
+
+.session-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  background:
+    radial-gradient(28rem 12rem at 0% 0%, rgba(99, 102, 241, 0.12), transparent 60%),
+    var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  animation: rise 0.5s 0.06s ease both;
+
+  strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+}
+
+.session-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-grad);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+
+  svg {
+    width: 22px;
+    height: 22px;
+    color: #fff;
+  }
+}
+
+.session-text {
+  flex: 1;
+
+  h2 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+  }
+
+  p {
+    margin-top: 4px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+  }
+}
+
+.session-badge {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-strong);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 999px;
+}
+
+/* ===================== Módulos ===================== */
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.tool-card {
+  display: flex;
+  gap: 16px;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text);
+  animation: rise 0.5s ease both;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.18s ease;
+
+  &:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.18s;
+  }
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+  }
+}
+
+.tool-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  color: var(--accent-strong);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 12px;
+
+  svg {
+    width: 21px;
+    height: 21px;
+  }
+}
+
+.tool-text {
+  h3 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  p {
+    margin-top: 6px;
+    font-size: 0.8438rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+}
+
+/* ===================== Animações ===================== */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .session-card {
+    flex-wrap: wrap;
+  }
+
+  .session-badge {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+}

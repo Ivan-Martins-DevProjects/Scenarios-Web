@@ -1,0 +1,246 @@
+<div class="sections-page">
+  <header class="sections-header">
+    <div>
+      <h1>Setores</h1>
+      <p>
+        {{ totalSections() }} setor{{ totalSections() === 1 ? '' : 'es' }} organizando a
+        plataforma. Setores definem quais pastas cada usuário pode visualizar.
+      </p>
+    </div>
+    <button class="btn-primary" type="button" (click)="openCreate()">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z" />
+      </svg>
+      Novo setor
+    </button>
+  </header>
+
+  @if (sectionSvc.loading()) {
+    <section class="notes-list" aria-label="Carregando setores">
+      @for (row of [1, 2, 3, 4, 5]; track row) {
+        <div class="skeleton-row">
+          <div class="skeleton-icon"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton skeleton--title"></div>
+            <div class="skeleton skeleton--text"></div>
+          </div>
+        </div>
+      }
+    </section>
+  } @else if (sectionSvc.error()) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M10 1.5a8.5 8.5 0 100 17 8.5 8.5 0 000-17zM2.5 10a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0zm6.4-4.35a.6.6 0 011.2 0V10a.6.6 0 01-.3.52l-2.6 1.5a.6.6 0 01-.6-1.04l2.3-1.33V5.65z" />
+        </svg>
+      </div>
+      <h3>Erro ao carregar setores</h3>
+      <p>{{ sectionSvc.error() }}</p>
+      <button class="btn-primary" type="button" (click)="sectionSvc.loadSections()">
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (sectionSvc.sections().length > 0) {
+    <section class="notes-list" aria-label="Setores cadastrados">
+      @for (section of sectionSvc.sections(); track section.id) {
+        <div class="note-row">
+          <div class="section-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M10 2.4l7 3.1-7 3.1-7-3.1 7-3.1zm0 8.5l4.8-2.1 2.2 1L10 15.6l-7-3.2 2.2-1L10 10.9zm0 4.2l4.4-2 2.6 1.2-7 3.1-7-3.1 2.6-1.2 4.4 2z" />
+            </svg>
+          </div>
+          <div class="row-main">
+            <div class="row-title-line">
+              <h2 class="row-title">{{ section.name }}</h2>
+            </div>
+            @if (section.description) {
+              <p class="row-snippet">{{ section.description }}</p>
+            }
+            <div class="row-meta">
+              <span>
+                {{ section.folder_count }} pasta{{ section.folder_count === 1 ? '' : 's' }}
+              </span>
+              <span class="dot">·</span>
+              <span>
+                {{ section.user_count }} usuário{{ section.user_count === 1 ? '' : 's' }}
+              </span>
+              <span class="dot">·</span>
+              <span>criado em {{ section.created_at | date: 'dd/MM/y' }}</span>
+            </div>
+          </div>
+          <div class="section-actions">
+            <button
+              type="button"
+              class="icon-action"
+              (click)="openEdit(section)"
+              aria-label="Editar setor {{ section.name }}"
+              title="Editar setor"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M13.94 2.6a2 2 0 012.83 0l.63.63a2 2 0 010 2.83l-8.9 8.9-4.24 1.41a.7.7 0 01-.88-.88l1.41-4.24 8.9-8.9.25-.75zM4.8 13.06l-.68 2.03 2.03-.68 8.32-8.32-1.35-1.35-8.32 8.32z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="icon-action icon-action--danger"
+              [disabled]="inUse(section)"
+              (click)="askDelete(section)"
+              aria-label="Excluir setor {{ section.name }}"
+              [title]="inUse(section) ? 'Setor em uso — remova as associações antes de excluir' : 'Excluir setor'"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M8.2 2.35a.9.9 0 00-.9.9v.9H4.15a.9.9 0 000 1.8h11.7a.9.9 0 000-1.8H12.7v-.9a.9.9 0 00-.9-.9H8.2zm-2.7 4.5l.65 9.14c.06.86.78 1.51 1.64 1.51h4.42c.86 0 1.58-.65 1.64-1.51l.65-9.14H5.5z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  } @else {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M10 2.4l7 3.1-7 3.1-7-3.1 7-3.1zm0 8.5l4.8-2.1 2.2 1L10 15.6l-7-3.2 2.2-1L10 10.9zm0 4.2l4.4-2 2.6 1.2-7 3.1-7-3.1 2.6-1.2 4.4 2z" />
+        </svg>
+      </div>
+      <h3>Nenhum setor cadastrado</h3>
+      <p>Crie o primeiro setor para organizar as pastas da plataforma.</p>
+      <button class="btn-primary" type="button" (click)="openCreate()">Criar setor</button>
+    </div>
+  }
+
+  <app-pager
+    [totalPages]="totalPages()"
+    [current]="sectionSvc.currentPage()"
+    [loading]="sectionSvc.loading()"
+    (pageChange)="goToPage($event)"
+  />
+</div>
+
+<app-modal
+  [open]="showCreate()"
+  title="Novo setor"
+  subtitle="Setores organizam as pastas e definem o acesso dos usuários."
+  (closed)="showCreate.set(false)"
+>
+  <form [formGroup]="createForm" (ngSubmit)="create()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="new-section-name">Nome</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="new-section-name"
+          type="text"
+          formControlName="name"
+          placeholder="Ex.: Logística"
+          [class.is-invalid]="createForm.controls.name.invalid && createForm.controls.name.touched"
+        />
+      </div>
+      @if (createForm.controls.name.invalid && createForm.controls.name.touched) {
+        <span class="field-error">Informe um nome com pelo menos 3 caracteres.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="new-section-description">Descrição (opcional)</label>
+      <div class="input-wrap input-wrap--plain">
+        <textarea
+          id="new-section-description"
+          rows="3"
+          formControlName="description"
+          placeholder="Para que serve este setor?"
+        ></textarea>
+      </div>
+    </div>
+
+    @if (createError()) {
+      <span class="field-error">{{ createError() }}</span>
+    }
+
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="showCreate.set(false)" [disabled]="creating()">
+        Cancelar
+      </button>
+      <button class="btn-primary" type="submit" [disabled]="creating()">
+        {{ creating() ? 'Criando…' : 'Criar setor' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal
+  [open]="editing() !== null"
+  title="Editar setor"
+  [subtitle]="editing()?.name ?? ''"
+  (closed)="closeEdit()"
+>
+  <form [formGroup]="editForm" (ngSubmit)="save()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="edit-section-name">Nome</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="edit-section-name"
+          type="text"
+          formControlName="name"
+          [class.is-invalid]="editForm.controls.name.invalid && editForm.controls.name.touched"
+        />
+      </div>
+      @if (editForm.controls.name.invalid && editForm.controls.name.touched) {
+        <span class="field-error">Informe um nome com pelo menos 3 caracteres.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="edit-section-description">Descrição (opcional)</label>
+      <div class="input-wrap input-wrap--plain">
+        <textarea
+          id="edit-section-description"
+          rows="3"
+          formControlName="description"
+        ></textarea>
+      </div>
+    </div>
+
+    @if (editError()) {
+      <span class="field-error">{{ editError() }}</span>
+    }
+
+    <footer class="create-actions">
+      <button class="btn-ghost" type="button" (click)="closeEdit()" [disabled]="saving()">
+        Cancelar
+      </button>
+      <button class="btn-primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Salvando…' : 'Salvar alterações' }}
+      </button>
+    </footer>
+  </form>
+</app-modal>
+
+<app-modal [open]="confirmTarget() !== null" title="Confirmar exclusão" size="sm">
+  @if (confirmTarget(); as section) {
+    <div class="confirm-body">
+      <p>
+        Excluir o setor <strong>{{ section.name }}</strong>?
+      </p>
+      <p class="confirm-warning">
+        @if (deleteError()) {
+          {{ deleteError() }}
+        } @else {
+          Esta ação não pode ser desfeita.
+        }
+      </p>
+      <footer class="create-actions">
+        <button
+          class="btn-ghost"
+          type="button"
+          (click)="confirmTarget.set(null)"
+          [disabled]="deleting()"
+        >
+          Cancelar
+        </button>
+        <button class="btn-danger" type="button" (click)="deleteSection()" [disabled]="deleting()">
+          {{ deleting() ? 'Excluindo…' : 'Excluir' }}
+        </button>
+      </footer>
+    </div>
+  }
+</app-modal>

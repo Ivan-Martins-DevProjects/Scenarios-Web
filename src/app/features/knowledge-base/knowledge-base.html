@@ -1,0 +1,282 @@
+<div class="kb-page">
+  <header class="kb-header">
+    <div>
+      <h1>Base de conhecimento</h1>
+      <p>
+        {{ totalFolders() }} pasta{{ totalFolders() === 1 ? '' : 's' }} na base de conhecimento
+        da equipe de suporte.
+      </p>
+    </div>
+    <button class="btn-primary" type="button" (click)="openCreate()">
+      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M10 4.25a.9.9 0 01.9.9v3.95h3.95a.9.9 0 010 1.8H10.9v3.95a.9.9 0 01-1.8 0V10.9H5.15a.9.9 0 010-1.8H9.1V5.15a.9.9 0 01.9-.9z" />
+      </svg>
+      Nova pasta
+    </button>
+  </header>
+
+  <div class="kb-controls">
+    <div class="search-area">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            d="M9 3.5a5.5 5.5 0 104.226 9.02l3.627 3.627a.9.9 0 001.27-1.27l-3.626-3.628A5.5 5.5 0 009 3.5zm-3.6 5.5a3.6 3.6 0 117.2 0 3.6 3.6 0 01-7.2 0z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <input
+          type="search"
+          [value]="searchTerm()"
+          (input)="onSearch($event)"
+          placeholder="Pesquisar em todas as pastas — títulos, conteúdo e referências"
+          aria-label="Pesquisar em todas as pastas"
+        />
+        @if (searchTerm()) {
+          <button class="clear-btn" type="button" (click)="clearSearch()" aria-label="Limpar pesquisa">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M5.3 4.24a.9.9 0 00-1.27 1.27L8.74 10.2 4.02 14.9a.9.9 0 101.28 1.27l4.7-4.72 4.72 4.72a.9.9 0 101.27-1.27l-4.71-4.7 4.71-4.72a.9.9 0 10-1.27-1.27L10 8.92 5.3 4.24z" />
+            </svg>
+          </button>
+        }
+      </div>
+
+      @if (showResults()) {
+        <div class="search-results" role="listbox" aria-label="Resultados da pesquisa">
+          @if (searching()) {
+            <div class="search-state">
+              <span class="mini-spinner" aria-hidden="true"></span>
+              Buscando…
+            </div>
+          } @else if (searchError()) {
+            <div class="search-state search-state--error">{{ searchError() }}</div>
+          } @else if (searchHits().length === 0) {
+            <div class="search-state">Nenhum resultado para "{{ searchTerm() }}".</div>
+          } @else {
+            @for (hit of searchHits(); track $index) {
+              <button type="button" class="search-hit" role="option" (click)="openHit(hit)">
+                <span class="hit-kind" [class]="'hit-kind hit-kind--' + hit.kind">
+                  {{ kindLabel(hit.kind) }}
+                </span>
+                <span class="hit-title">{{ hit.title }}</span>
+                <span class="hit-folder">
+                  @if (hit.note_name) {
+                    {{ hit.note_name }} - {{ hit.folder_name }}
+                  } @else {
+                    {{ hit.folder_name }}
+                  }
+                </span>
+                @for (match of hit.matches; track $index) {
+                  <p class="hit-match">
+                    @for (segment of matchSegments(match); track $index) {
+                      @if (segment.matched) {
+                        <mark>{{ segment.text }}</mark>
+                      } @else {
+                        <span>{{ segment.text }}</span>
+                      }
+                    }
+                  </p>
+                }
+              </button>
+            }
+          }
+        </div>
+      }
+    </div>
+
+    <div class="list-filters">
+      <label class="filter-field">
+        <span>Setor</span>
+        <select [value]="sectionFilter()" (change)="sectionFilter.set($any($event.target).value); reload()">
+          <option value="">Todos os setores</option>
+          @for (section of mySections(); track section.id) {
+            <option [value]="section.id">{{ section.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="filter-field">
+        <span>Ordenar por</span>
+        <select [value]="order()" (change)="order.set($any($event.target).value); reload()">
+          <option value="name">Ordem alfabética</option>
+          <option value="modified">Modificação</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  @if (kb.foldersLoading()) {
+    <!-- ==================== Pastas (API) — carregando ==================== -->
+    <section class="folders-list" aria-label="Carregando pastas">
+      <div class="skeleton-row">
+        <div class="skeleton-icon"></div>
+        <div class="skeleton-lines">
+          <div class="skeleton skeleton--title"></div>
+          <div class="skeleton skeleton--text"></div>
+        </div>
+      </div>
+      <div class="skeleton-row">
+        <div class="skeleton-icon"></div>
+        <div class="skeleton-lines">
+          <div class="skeleton skeleton--title"></div>
+          <div class="skeleton skeleton--text"></div>
+        </div>
+      </div>
+    </section>
+  } @else if (kb.foldersError()) {
+    <!-- ==================== Erro ==================== -->
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M10 1.5a8.5 8.5 0 100 17 8.5 8.5 0 000-17zM2.5 10a7.5 7.5 0 1115 0 7.5 7.5 0 01-15 0zm6.4-4.35a.6.6 0 011.2 0V10a.6.6 0 01-.3.52l-2.6 1.5a.6.6 0 01-.6-1.04l2.3-1.33V5.65z" />
+        </svg>
+      </div>
+      <h3>Erro ao carregar pastas</h3>
+      <p>{{ kb.foldersError() }}</p>
+      <button class="btn-primary" type="button" (click)="kb.loadFolders()">
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (kb.folders().length > 0) {
+    <!-- ==================== Pastas (API) ==================== -->
+    <section class="folders-list" aria-label="Pastas da base de conhecimento">
+      @for (folder of kb.folders(); track folder.id) {
+        <a class="folder-row" [routerLink]="['/kb/folder', folder.id]">
+          <div class="folder-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M2.6 4.6c0-.77.62-1.4 1.4-1.4h3.47c.4 0 .78.17 1.05.46l1.32 1.44h5.16c.77 0 1.4.63 1.4 1.4v7.9c0 .77-.63 1.4-1.4 1.4H4c-.78 0-1.4-.63-1.4-1.4V4.6zm1.8 9.4h11.2V6.66H9.03a1.4 1.4 0 01-1.03-.46L6.87 5H4.4v9z" />
+            </svg>
+          </div>
+          <div class="row-main">
+            <div class="row-title-line">
+              <h2 class="row-title">{{ folder.name }}</h2>
+              @if (folder.section_name) {
+                <span class="role-badge">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5 8V6.5a4 4 0 118 0V8h.5A1.5 1.5 0 0115.5 9.5v6A1.5 1.5 0 0113.5 17h-7A1.5 1.5 0 015 15.5v-6A1.5 1.5 0 016.5 8H5zm2 0V6.5a2 2 0 114 0V8H7z" clip-rule="evenodd" />
+                  </svg>
+                  {{ folder.section_name }}
+                </span>
+              }
+            </div>
+            @if (folder.description) {
+              <p class="row-snippet">{{ folder.description }}</p>
+            }
+            <div class="row-meta">
+              <span>criada em {{ folder.created_at | date: 'dd/MM/y' }}</span>
+            </div>
+          </div>
+          <svg class="row-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path
+              fill-rule="evenodd"
+              d="M7.3 4.3a.9.9 0 000 1.27l4.4 4.4-4.4 4.4a.9.9 0 101.27 1.27l5.03-5.03a.9.9 0 000-1.27L8.57 4.3a.9.9 0 00-1.27 0z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </a>
+      }
+    </section>
+  } @else {
+    <!-- ==================== Vazio ==================== -->
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M2.6 4.6c0-.77.62-1.4 1.4-1.4h3.47c.4 0 .78.17 1.05.46l1.32 1.44h5.16c.77 0 1.4.63 1.4 1.4v7.9c0 .77-.63 1.4-1.4 1.4H4c-.78 0-1.4-.63-1.4-1.4V4.6zm1.8 9.4h11.2V6.66H9.03a1.4 1.4 0 01-1.03-.46L6.87 5H4.4v9z" />
+        </svg>
+      </div>
+      <h3>Nenhuma pasta ainda</h3>
+      <p>Crie pastas para agrupar as notas de conhecimento da equipe por tema ou área.</p>
+      <button class="btn-primary" type="button" (click)="openCreate()">Criar pasta</button>
+    </div>
+  }
+
+  @if (!kb.foldersError()) {
+    <app-pager
+      [totalPages]="totalPages()"
+      [current]="currentPage()"
+      [loading]="kb.foldersLoading()"
+      (pageChange)="goToPage($event)"
+    />
+  }
+</div>
+
+<app-modal
+  [open]="showCreate()"
+  title="Nova pasta"
+  subtitle="As pastas agrupam as notas por tema, área ou tipo de conteúdo."
+  (closed)="showCreate.set(false)"
+>
+  <form [formGroup]="folderForm" (ngSubmit)="createFolder()" novalidate class="create-form">
+    <div class="form-field">
+      <label for="folder-name">Nome da pasta</label>
+      <div class="input-wrap input-wrap--plain">
+        <input
+          id="folder-name"
+          type="text"
+          formControlName="name"
+          placeholder="Ex.: Financeiro"
+          [class.is-invalid]="folderForm.controls.name.invalid && folderForm.controls.name.touched"
+        />
+      </div>
+      @if (folderForm.controls.name.invalid && folderForm.controls.name.touched) {
+        <span class="field-error">
+          @if (folderForm.controls.name.hasError('required')) {
+            Informe o nome da pasta.
+          } @else {
+            O nome deve ter pelo menos 3 caracteres.
+          }
+        </span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="folder-description">Descrição (opcional)</label>
+      <div class="input-wrap input-wrap--plain">
+        <textarea
+          id="folder-description"
+          rows="3"
+          formControlName="description"
+          placeholder="Para que serve esta pasta?"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label for="folder-section">Setor (opcional)</label>
+      <div class="input-wrap input-wrap--plain">
+        <select id="folder-section" formControlName="section_id">
+          <option value="">Visível para todos os usuários</option>
+          @for (section of mySections(); track section.id) {
+            <option [value]="section.id">{{ section.name }} — {{ section.description }}</option>
+          }
+        </select>
+      </div>
+      <p class="section-hint">
+        Apenas os setores associados ao seu cadastro são exibidos.
+      </p>
+    </div>
+
+    <footer class="create-actions">
+      <button
+        class="btn-ghost"
+        type="button"
+        (click)="showCreate.set(false)"
+        [disabled]="creating() || redirecting()"
+      >
+        Cancelar
+      </button>
+      <button
+        class="btn-primary"
+        type="submit"
+        [disabled]="creating() || redirecting()"
+      >
+        @if (redirecting()) {
+          Redirecionando…
+        } @else if (creating()) {
+          Criando…
+        } @else {
+          Criar pasta
+        }
+      </button>
+    </footer>
+  </form>
+</app-modal>
